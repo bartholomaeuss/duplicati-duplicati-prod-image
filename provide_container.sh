@@ -16,7 +16,7 @@ provide_container(){
     scp "${dockerfile}" "${user}@${remote}":"~/${dockerfile}"
     ssh -l "${user}" "${remote}" "docker kill \$(docker ps -q --filter ancestor=${image}:${tag})"
     ssh -l "${user}" "${remote}" "docker build -t ${image}:${tag} -f ./${dockerfile} ."
-    ssh -l "${user}" "${remote}" "docker run -d --net=host -v ~/duplicati:/duplicati -v ~/backup:/backup --restart=unless-stopped ${image}:${tag}"
+    ssh -l "${user}" "${remote}" "docker run -d --net=host -v ~/duplicati:/duplicati -v ~/backup:/backup -v /mnt/external_drive/tier2://mnt/external_drive/tier2 -v /mnt/external_ssdrive/tier2:/mnt/external_ssdrive/tier2 --restart=unless-stopped ${image}:${tag}"
     exit 0
 }
 
