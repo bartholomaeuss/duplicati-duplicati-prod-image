@@ -12,9 +12,9 @@ RUN echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" |
 
 RUN apt-get install -y mono-devel gtk-sharp2 libappindicator0.1-cil libmono-2.0-1 wget apt-transport-https nano git-core software-properties-common dirmngr
 
-RUN wget https://updates.duplicati.com/beta/duplicati_2.0.7.1-1_all.deb
+RUN wget https://github.com/duplicati/duplicati/releases/download/v2.0.8.1-2.0.8.1_beta_2024-05-07/duplicati_2.0.8.1-1_all.deb
 
-RUN apt-get -y install ./duplicati_2.0.7.1-1_all.deb
+RUN apt-get -y install ./duplicati_2.0.8.1-1_all.deb
 
 ENTRYPOINT ["/usr/bin/duplicati-server"]
 
