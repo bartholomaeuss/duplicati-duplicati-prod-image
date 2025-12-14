@@ -1,37 +1,107 @@
-# DUPLICATI/DUPLICATI PROD IMAGE
+# Duplicati Production Image
 
-### Prerequisite
+This repository packages a reproducible Docker image for [Duplicati](https://www.duplicati.com/) plus a couple of helper scripts
+that make it easy to stand up the service on fresh hosts with predictable defaults. The scripts are designed for **quick host
+validation, lab experiments, and troubleshooting** when you just need Duplicati up and reachable fast.
 
+> **Warning**  
+> These scripts are **not** meant for long-lived or mission-critical production deployments. They deliberately focus on speed and
+> convenience rather than exhaustive hardening. Adapt the Dockerfile and automate a hardened workflow separately before using
+> this image in real production.
+
+## Why this repo?
+
+- **Single-command lifecycle** - `scripts/docker/run.sh` tears down existing containers, prunes dependent images, rebuilds, and
+  restarts the container with the right mounts so test hosts always land in a clean state.
+- **Predictable defaults** - the image/tag (`duplicati:shipit`) and volume mappings mirror the lab layout where configuration is
+  under `~/duplicati` and data lives on `/mnt/external_drive_*`.
+- **Easy host testing** - run the script after imaging or repurposing a server to confirm storage, networking, and Docker work as
+  expected before pushing a production stack.
+
+## Requirements
+
+- Docker Engine 24+ on a Linux host (tested on Ubuntu Server; adjust paths for other platforms).
+- Bash 5+ (the scripts rely on `set -euo pipefail`, arrays, and process substitution).
+- Host directories created ahead of time:
+  - `~/duplicati`
+  - `/mnt/external_drive_1/tier2`
+  - `/mnt/external_drive_2/tier2`
+  - `/mnt/external_drive_1/tier3`
+  - `/mnt/external_drive_2/tier3`
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `Dockerfile` | Builds the `duplicati:shipit` image from Ubuntu 20.04 and installs the selected Duplicati release. |
+| `scripts/docker/run.sh` | Idempotent lifecycle helper: stop/remove containers, prune image chain, rebuild, restart. |
+| `scripts/docker/prerun.sh` | Placeholder hook (currently just logs that nothing needs to run before `run.sh`). |
+| `scripts/docker/postrun.sh` | Reserved for post-run hooks (empty so you can extend it). |
+
+## Quick start
 
 ```bash
-./hello_world.sh
+git clone https://github.com/YOUR_ORG/duplicati-duplicati-prod-image.git
+cd duplicati-duplicati-prod-image
+
+# Optional: edit Dockerfile or scripts/docker/run.sh if you need different paths.
+bash scripts/docker/run.sh
 ```
 
-### Windows
+The run script will:
+
+1. Detect and stop any running containers created from `duplicati:shipit`.
+2. Remove those containers and every image layer involved in the previous build.
+3. Rebuild the image from the repository root.
+4. Launch `duplicati:shipit` with host networking and the configured persistent volumes.
+
+### Manual Docker workflow
+
+Prefer to run Docker commands yourself? From the repo root:
 
 ```bash
-./provide_container.sh
+docker build -t duplicati:shipit -f Dockerfile .
+
+docker run -d \
+  --name="duplicati_shipit" \
+  --net=host \
+  -v ~/duplicati:/duplicati \
+  -v /mnt/external_drive_1/tier2:/external_drive_1/tier2 \
+  -v /mnt/external_drive_2/tier2:/external_drive_2/tier2 \
+  -v /mnt/external_drive_1/tier3:/external_drive_1/tier3 \
+  -v /mnt/external_drive_2/tier3:/external_drive_2/tier3 \
+  --restart=unless-stopped \
+  duplicati:shipit
 ```
 
-### More
+Duplicati's web interface binds to `0.0.0.0:8200` (see `CMD` in the Dockerfile), so you can connect from localhost or any LAN
+client allowed to reach the host.
 
-```
-sudo docker run -d --net=host -v ~/duplicati:/duplicati -v ~/backup:/backup --restart=unless-stopped duplicati:2
-```
-```
+## Maintenance and operations
+
+- **Upgrade Duplicati** - edit the download URL in `Dockerfile`, then run `scripts/docker/run.sh` to rebuild and redeploy.
+- **Customize mounts** - update the `docker run` section in `scripts/docker/run.sh` if your storage layout differs.
+- **Automate tests** - drop `scripts/docker/run.sh` into a cron job or CI pipeline when you need periodic host validation.
+
+### Useful CLI actions
+
+```bash
 duplicati-cli repair TARGET-URL --passphrase="PASSPHRASE"
-```
-```
 duplicati-cli list-broken-files TARGET-URL --full-result --dbpath=PATH --passphrase="PASSPHRASE"
-```
-```
 duplicati-cli purge-broken-files TARGET-URL --full-result --dbpath=PATH --passphrase="PASSPHRASE"
 ```
 
+## Troubleshooting
 
+- **Port 8200 already in use** - stop the conflicting service or adjust the command-line arguments in the Dockerfile.
+- **Missing host folders** - create the expected directories before running the script; otherwise Docker may create root-owned
+  folders with the wrong permissions.
+- **Docker permission errors** - add your user to the `docker` group or run the commands with `sudo`.
+- **Image cleanup failures** - if `remove_image_chain` in `run.sh` cannot prune older layers, run `docker image ls` and remove
+  them manually.
 
-See the official
-[duplicati](https://duplicati.readthedocs.io/en/latest/)
-documentation.
-See also the official
-[installation manual](https://duplicati.readthedocs.io/en/latest/02-installation/).
+## Further reading
+
+- [Duplicati documentation](https://duplicati.readthedocs.io/en/latest/)
+- [Installation guide](https://duplicati.readthedocs.io/en/latest/02-installation/)
+- [Duplicati CLI reference](https://duplicati.readthedocs.io/en/latest/05-cli-usage/)
