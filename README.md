@@ -77,6 +77,25 @@ docker run -d \
 Duplicati's web interface binds to `0.0.0.0:8200` (see `CMD` in the Dockerfile), so you can connect from localhost or any LAN
 client allowed to reach the host.
 
+## Line endings and pre-commit hooks
+
+Cloning the repo on Windows can silently convert the shell scripts to CRLF line endings, which makes `bash scripts/docker/*.sh`
+fail with `/bin/bash^M` errors and removes their executable bit inside Linux containers. To keep every script runnable:
+
+- `.gitattributes` forces `*.sh` to stay `LF`, so Git will normalize the files even when checked out on Windows.
+- `.pre-commit-config.yaml` runs `mixed-line-ending`, `end-of-file-fixer`, and `check-executables-have-shebangs` so broken or
+  non-executable scripts are rejected before they land in the repo.
+
+Install the hook runner once per clone:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+If you already have broken checkouts, rerun `git checkout -- scripts/docker/*.sh` or `dos2unix scripts/docker/*.sh` to convert
+them, then commit with the hooks enabled. Without these guardrails, the shell scripts will not stay executable across platforms.
+
 ## Maintenance and operations
 
 - **Upgrade Duplicati** - edit the download URL in `Dockerfile`, then run `scripts/docker/run.sh` to rebuild and redeploy.
