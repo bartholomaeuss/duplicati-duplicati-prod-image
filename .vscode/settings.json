@@ -1,0 +1,3 @@
+{
+    "containers.commands.run": "${containerCommand} run --rm -d ${exposedPorts} ${tag}"
+}
