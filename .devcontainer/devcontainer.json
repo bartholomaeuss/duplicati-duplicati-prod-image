@@ -9,5 +9,14 @@
     "LANG": "C.UTF-8",
     "LC_ALL": "C.UTF-8"
   },
-  "postCreateCommand": "apt-get -y update && apt-get install -y curl && curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv tool install pre-commit"
+  "postCreateCommand": "apt-get -y update && apt-get install -y curl && curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv tool install pre-commit",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "openai.chatgpt",
+        "ms-azuretools.vscode-containers",
+        "JFrog.jfrog-vscode-extension"
+      ]
+    }
+  }
 }

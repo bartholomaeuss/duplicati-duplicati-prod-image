@@ -55,6 +55,13 @@ The run script will:
 3. Rebuild the image from the repository root.
 4. Launch `duplicati:shipit` with host networking and the configured persistent volumes.
 
+### Compose helpers are dev-only
+
+The `Dockerfile` is the only artifact intended for production builds or registries. Any Compose files
+(`docker-compose.yml`, `docker-compose.dev.yml`, `docker-compose.debug.yml`, etc.) exist solely to simplify
+local testing, debugging, or lab validation. Feel free to tweak or discard those helper files without
+affecting the production image—the Dockerfile remains the source of truth for real deployments.
+
 ### Manual Docker workflow
 
 Prefer to run Docker commands yourself? From the repo root:
